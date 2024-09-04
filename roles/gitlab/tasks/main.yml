@@ -1,0 +1,20 @@
+---
+# roles/gitlab/tasks/main.yml
+
+- name: Install GitLab dependencies
+  apt:
+    name: curl
+    state: present
+
+- name: Add GitLab repository
+  apt_repository:
+    repo: "deb https://packages.gitlab.com/gitlab/gitlab-ce/ubuntu/ $(lsb_release -cs) main"
+    state: present
+
+- name: Install GitLab
+  apt:
+    name: gitlab-ce
+    state: present
+
+- name: Configure GitLab
+  command: gitlab-ctl reconfigure

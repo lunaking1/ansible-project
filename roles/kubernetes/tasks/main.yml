@@ -1,0 +1,49 @@
+---
+# roles/kubernetes/tasks/main.yml
+
+- name: Install Kubernetes prerequisites
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+
+- name: Add Kubernetes apt key
+  apt_key:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    state: present
+
+- name: Add Kubernetes apt repository
+  apt_repository:
+    repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+    state: present
+
+- name: Install Kubernetes packages
+  apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+    update_cache: yes
+
+- name: Hold Kubernetes packages
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+    allow_unauthenticated: yes
+    dpkg_options: 'force-confdef,force-confold'
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl
+
+- name: Start and enable kubelet
+  systemd:
+    name: kubelet
+    enabled: yes
+    state: started

@@ -1,0 +1,30 @@
+---
+# roles/clair/tasks/main.yml
+
+- name: Install Clair dependencies
+  apt:
+    name:
+      - golang-go
+      - sqlite3
+      - git
+    state: present
+
+- name: Clone Clair repository
+  git:
+    repo: 'https://github.com/quay/clair.git'
+    dest: /opt/clair
+
+- name: Build Clair
+  shell: |
+    cd /opt/clair
+    go build -o clair
+
+- name: Copy Clair configuration
+  template:
+    src: clair-config.yaml.j2
+    dest: /opt/clair/config.yaml
+
+- name: Run Clair
+  shell: |
+    cd /opt/clair
+    ./clair -config=config.yaml

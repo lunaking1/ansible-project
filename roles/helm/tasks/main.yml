@@ -1,0 +1,14 @@
+---
+# roles/helm/tasks/main.yml
+
+- name: Install Helm
+  shell: |
+    curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+
+- name: Verify Helm installation
+  command: helm version
+  register: helm_version
+
+- name: Display Helm version
+  debug:
+    msg: "Helm installed with version: {{ helm_version.stdout }}"
