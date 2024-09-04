@@ -1,0 +1,110 @@
+---
+- hosts: localhost
+  become: yes
+  tasks:
+    - name: Update APT package index
+      apt:
+        update_cache: yes
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Enable and start Docker
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Install Kubernetes prerequisites
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+
+    - name: Add Kubernetes apt key
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+
+    - name: Add Kubernetes apt repository
+      apt_repository:
+        repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+        state: present
+
+    - name: Install Kubernetes
+      apt:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: present
+        update_cache: yes
+
+    - name: Hold Kubernetes packages
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+        allow_unauthenticated: yes
+        dpkg_options: 'force-confdef,force-confold'
+      loop:
+        - kubelet
+        - kubeadm
+        - kubectl
+
+    - name: Start and enable kubelet
+      systemd:
+        name: kubelet
+        enabled: yes
+        state: started
+
+    - name: Install GitLab dependencies
+      apt:
+        name: curl
+        state: present
+
+    - name: Add GitLab repository
+      apt_repository:
+        repo: "deb https://packages.gitlab.com/gitlab/gitlab-ce/ubuntu/ $(lsb_release -cs) main"
+        state: present
+
+    - name: Install GitLab
+      apt:
+        name: gitlab-ce
+        state: present
+
+    - name: Configure GitLab
+      command: gitlab-ctl reconfigure
+
+    - name: Install Clair dependencies
+      apt:
+        name:
+          - golang-go
+          - sqlite3
+          - git
+        state: present
+
+    - name: Clone Clair repository
+      git:
+        repo: 'https://github.com/quay/clair.git'
+        dest: /opt/clair
+
+    - name: Build Clair
+      shell: |
+        cd /opt/clair
+        go build -o clair
+
+    - name: Configure Clair
+      copy:
+        src: /path/to/your/clair/config.yaml
+        dest: /opt/clair/config.yaml
+
+    - name: Install Helm
+      shell: |
+        curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
